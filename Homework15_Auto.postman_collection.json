@@ -1,0 +1,1164 @@
+{
+	"info": {
+		"_postman_id": "48c7fe54-b113-4307-9d8b-692a90a19eab",
+		"name": "Homework15_Auto",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35279821"
+	},
+	"item": [
+		{
+			"name": "RegisterUsers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([201]);",
+							"});",
+							"",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+							"});",
+							"",
+							"    pm.test(\"Body matches string\", function () {",
+							"        pm.expect(pm.response.text()).to.include(\"default-user.png\");",
+							"        pm.expect(pm.response.text()).to.include(\"km\");",
+							"        pm.expect(pm.response.text()).to.include(\"usd\");",
+							"    });",
+							"// Add to check JSON scheme    ",
+							"const Ajv = require('ajv');",
+							"const ajv = new Ajv();",
+							"",
+							"// Define the schema for the response",
+							"const schema = {",
+							"    \"type\": \"object\",",
+							"    \"properties\": {",
+							"        \"status\": {",
+							"            \"type\": \"string\"",
+							"        },",
+							"        \"data\": {",
+							"            \"type\": \"object\",",
+							"            \"properties\": {",
+							"                \"userId\": {",
+							"                    \"type\": \"integer\"",
+							"                },",
+							"                \"photoFilename\": {",
+							"                    \"type\": \"string\"",
+							"                },",
+							"                \"distanceUnits\": {",
+							"                    \"type\": \"string\"",
+							"                },",
+							"                \"currency\": {",
+							"                    \"type\": \"string\"",
+							"                }",
+							"            },",
+							"            \"required\": [\"userId\", \"photoFilename\", \"distanceUnits\", \"currency\"]",
+							"        }",
+							"    },",
+							"    \"required\": [\"status\", \"data\"]",
+							"};",
+							"",
+							"// Get the JSON response",
+							"const response = pm.response.json();",
+							"",
+							"// Validate the response against the schema",
+							"const validate = ajv.compile(schema);",
+							"const valid = validate(response);",
+							"",
+							"pm.test(\"Schema is valid\", function() {",
+							"    pm.expect(valid).to.be.true;",
+							"    if (!valid) {",
+							"        console.log(\"Response is invalid:\", validate.errors);",
+							"    }",
+							"});",
+							"",
+							"// Get the email from environment variable",
+							"const email = pm.environment.get(\"randomemail\");",
+							"if (!email) {",
+							"    throw new Error(\"randomemail environment variable is not set\");",
+							"}",
+							"",
+							"// Check for email uniqueness",
+							"let existingEmails = pm.environment.get(\"existingEmails\");",
+							"",
+							"if (existingEmails) {",
+							"    existingEmails = JSON.parse(existingEmails);",
+							"    // Filter out any null values that may exist in the array",
+							"    existingEmails = existingEmails.filter(email => email !== null);",
+							"} else {",
+							"    existingEmails = [];",
+							"}",
+							"",
+							"pm.test(\"Email should be unique\", function() {",
+							"    pm.expect(existingEmails).to.not.include(email);",
+							"});",
+							"",
+							"if (!existingEmails.includes(email)) {",
+							"    existingEmails.push(email);",
+							"    pm.environment.set(\"existingEmails\", JSON.stringify(existingEmails));",
+							"} else {",
+							"    console.log(`The email ${email} already exists.`);",
+							"}",
+							"",
+							"//Storing userId during registration",
+							"",
+							"// Check if the status is \"ok\" and save the userId",
+							"pm.test(\"User registration response status is ok\", function () {",
+							"    pm.expect(response.status).to.equal(\"ok\");",
+							"    pm.environment.set(\"userId\", response.data.userId);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Function to remove special characters from a string",
+							"function removeSpecialCharacters(str) {",
+							"    return str.replace(/[^a-zA-Z0-9]/g, '');",
+							"}",
+							"",
+							"// Unset previous environment variables",
+							"pm.environment.unset(\"randomemail\");",
+							"pm.environment.unset(\"randomFirstName\");",
+							"pm.environment.unset(\"randomLastName\");",
+							"pm.environment.unset(\"randomPassword\");",
+							"pm.environment.unset(\"repeatPassword\");",
+							"",
+							"// Generate new random values",
+							"var randomEmail = pm.variables.replaceIn(\"{{$randomEmail}}\");",
+							"var randomFirstName = pm.variables.replaceIn(\"{{$randomFirstName}}\");",
+							"var randomLastName = pm.variables.replaceIn(\"{{$randomLastName}}\");",
+							"var randomPassword = pm.variables.replaceIn(\"{{$randomPassword}}\");",
+							"",
+							"// Sanitize the values to remove special characters",
+							"randomFirstName = removeSpecialCharacters(randomFirstName);",
+							"randomLastName = removeSpecialCharacters(randomLastName);",
+							"",
+							"// Set the sanitized values in environment variables",
+							"pm.environment.set(\"randomemail\", randomEmail);",
+							"pm.environment.set(\"randomFirstName\", randomFirstName);",
+							"pm.environment.set(\"randomLastName\", randomLastName);",
+							"pm.environment.set(\"randomPassword\", randomPassword);",
+							"pm.environment.set(\"repeatPassword\", randomPassword);  // Repeat password should be the same as password",
+							"",
+							"// Log the values to the console for verification",
+							"console.log(\"Email: \" + pm.environment.get(\"randomemail\"));",
+							"console.log(\"First Name: \" + pm.environment.get(\"randomFirstName\"));",
+							"console.log(\"Last Name: \" + pm.environment.get(\"randomLastName\"));",
+							"console.log(\"Password: \" + pm.environment.get(\"randomPassword\"));",
+							"console.log(\"Repeat Password: \" + pm.environment.get(\"repeatPassword\"));",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"{{randomFirstName}}\",\r\n  \"lastName\": \"{{randomLastName}}\",\r\n  \"email\": \"{{randomemail}}\",\r\n  \"password\": \"{{randomPassword}}\",\r\n  \"repeatPassword\": \"{{randomPassword}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/auth/signup"
+			},
+			"response": []
+		},
+		{
+			"name": "SignInUsers",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set new environment variables for login",
+							"pm.environment.set(\"loginEmail\", pm.environment.get(\"randomemail\"));",
+							"pm.environment.set(\"loginPassword\", pm.environment.get(\"randomPassword\"));",
+							"pm.environment.set(\"rememberMe\", true);",
+							"",
+							"// Log the values to the console for verification",
+							"console.log(\"Login Email: \" + pm.environment.get(\"loginEmail\"));",
+							"console.log(\"Login Password: \" + pm.environment.get(\"loginPassword\"));",
+							"console.log(\"Remember Me: \" + pm.environment.get(\"rememberMe\"));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Response Body contains expected keys\", function () {",
+							"    pm.expect(pm.response.json()).to.have.keys('status', 'data');",
+							"});",
+							"pm.test(\"User ID is present\", function () {",
+							"    const userId = pm.response.json().data.userId;",
+							"    pm.expect(userId).to.exist; // Check if user ID exists",
+							"    pm.expect(userId).to.not.be.null; // Check if user ID is not null",
+							"    pm.expect(userId).to.not.be.undefined; // Check if user ID is not undefined",
+							"});",
+							"pm.test(\"Photo Filename is present and non-empty\", function () {",
+							"    pm.expect(pm.response.json().data.photoFilename).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test(\"Currency is present and non-empty\", function () {",
+							"    pm.expect(pm.response.json().data.currency).to.be.a('string').and.not.empty;",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{loginEmail}}\",\n    \"password\": \"{{loginPassword}}\",\n    \"remember\": {{rememberMe}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/auth/signin"
+			},
+			"response": []
+		},
+		{
+			"name": "CurrentUsers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the JSON response",
+							"const response = pm.response.json();",
+							"",
+							"// Check if the status is \"ok\" and the data object exists",
+							"pm.test(\"Check if response is ok\", function () {",
+							"    pm.expect(response.status).to.equal(\"ok\");",
+							"    pm.expect(response.data).to.be.an(\"object\");",
+							"});",
+							"",
+							"// Set the userId as an environment variable",
+							"if (response.status === \"ok\" && response.data) {",
+							"    const userId = response.data.userId;",
+							"    pm.environment.set(\"userId\", userId);",
+							"    console.log(`userId is set to: ${userId}`);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/users/current"
+			},
+			"response": []
+		},
+		{
+			"name": "UsersProfile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is ok\", function () {",
+							"    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+							"});",
+							"pm.test(\"User ID is present\", function () {",
+							"    const userId = pm.response.json().data.userId;",
+							"    pm.expect(userId).to.exist; // Check if user ID exists",
+							"    pm.expect(userId).to.be.a(\"number\"); // Check if user ID is a number",
+							"});",
+							"pm.test(\"Name is present and non-empty\", function () {",
+							"    const name = pm.response.json().data.name;",
+							"    pm.expect(name).to.exist; // Check if name exists",
+							"    pm.expect(name).to.not.be.empty; // Check if name is not empty",
+							"});",
+							"pm.test(\"Last Name is present and non-empty\", function () {",
+							"    const lastName = pm.response.json().data.lastName;",
+							"    pm.expect(lastName).to.exist; // Check if last name exists",
+							"    pm.expect(lastName).to.not.be.empty; // Check if last name is not empty",
+							"});",
+							"pm.test(\"Photo Filename is present\", function () {",
+							"    const photoFilename = pm.response.json().data.photoFilename;",
+							"    pm.expect(photoFilename).to.exist; // Check if photo filename exists",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/users/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "EditUsersProfile",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"photoFilename\", \"user-1621352948859.jpg\");",
+							"pm.environment.set(\"name\", \"John\");",
+							"pm.environment.set(\"lastName\", \"Dou\");",
+							"pm.environment.set(\"dateBirth\", \"2021-03-17T15:21:05.000Z\");",
+							"pm.environment.set(\"country\", \"Ukraine\");"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Parse the JSON response",
+							"const response = pm.response.json();",
+							"",
+							"// Extract values from the response",
+							"const responseData = response.data;",
+							"",
+							"// Extract expected values from environment variables",
+							"const expectedUserId = pm.environment.get(\"userId\");",
+							"const expectedPhotoFilename = pm.environment.get(\"photoFilename\");",
+							"const expectedName = pm.environment.get(\"name\");",
+							"const expectedLastName = pm.environment.get(\"lastName\");",
+							"const expectedDateBirth = pm.environment.get(\"dateBirth\");",
+							"const expectedCountry = pm.environment.get(\"country\");",
+							"",
+							"// Check if the status is \"ok\"",
+							"pm.test(\"Check if response status is ok\", function () {",
+							"    pm.expect(response.status).to.equal(\"ok\");",
+							"});",
+							"",
+							"// Compare response data with expected values",
+							"pm.test(\"Validate response data\", function () {",
+							"    pm.expect(responseData.userId).to.equal(Number(expectedUserId));",
+							"    pm.expect(responseData.photoFilename).to.equal(expectedPhotoFilename);",
+							"    pm.expect(responseData.name).to.equal(expectedName);",
+							"    pm.expect(responseData.lastName).to.equal(expectedLastName);",
+							"    pm.expect(responseData.dateBirth).to.equal(expectedDateBirth);",
+							"    pm.expect(responseData.country).to.equal(expectedCountry);",
+							"});",
+							"",
+							"// Set the userId from the response as an environment variable for future requests",
+							"pm.environment.set(\"userId\", responseData.userId);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": \"{{$userId}}\",\n  \"photoFilename\": \"{{photoFilename}}\",\n  \"name\": \"{{name}}\",\n  \"lastName\": \"{{lastName}}\",\n  \"dateBirth\": \"{{dateBirth}}\",\n  \"country\": \"{{country}}\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/users/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "UsersSettings",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is ok\", function () {",
+							"    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+							"});",
+							"pm.test(\"Currency setting is present and valid\", function () {",
+							"    const currency = pm.response.json().data.currency;",
+							"    pm.expect(currency).to.exist; // Check if currency setting exists",
+							"    pm.expect(currency).to.be.oneOf([\"usd\", \"eur\", \"gbp\"]); // Add more currencies if needed",
+							"});",
+							"pm.test(\"Distance units setting is present and valid\", function () {",
+							"    const distanceUnits = pm.response.json().data.distanceUnits;",
+							"    pm.expect(distanceUnits).to.exist; // Check if distance units setting exists",
+							"    pm.expect(distanceUnits).to.be.oneOf([\"km\", \"miles\"]); // Add more distance units if needed",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/users/settings"
+			},
+			"response": []
+		},
+		{
+			"name": "CarsBrands",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"// Take response body as JSON",
+							"let response = pm.response.json();",
+							"",
+							"// Check if the status is 'ok' and 'data' array is present",
+							"if (response.status === 'ok' && Array.isArray(response.data) && response.data.length > 0) {",
+							"    // Extract the 'data' array",
+							"    let dataArray = response.data;",
+							"    ",
+							"    // Function to choose a random value from an array",
+							"    function chooseRandomValue(arr) {",
+							"        const randomIndex = Math.floor(Math.random() * arr.length);",
+							"        return arr[randomIndex];",
+							"    }",
+							"    ",
+							"    // Get a random item from the 'data' array",
+							"    let randomItem = chooseRandomValue(dataArray);",
+							"    ",
+							"    // Log the random item's id to the console",
+							"    console.log(\"Random ID:\", randomItem.id);",
+							"    ",
+							"    // Save the random ID to a Postman environment variable ",
+							"    pm.environment.set(\"randomCarBrandId\", randomItem.id);",
+							"    ",
+							"    // Log the random item to the console ",
+							"    console.log(\"Random Car Brand Item:\", randomItem);",
+							"} else {",
+							"    console.error(\"Invalid response structure or empty data array\");",
+							"}",
+							"pm.test(\"Status is ok\", function () {",
+							"    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+							"});",
+							"pm.test(\"Data is present and is an array\", function () {",
+							"    const data = pm.response.json().data;",
+							"    pm.expect(data).to.be.an(\"array\");",
+							"    pm.expect(data.length).to.be.above(0); // Check if data array is not empty",
+							"});",
+							"pm.test(\"Each brand contains ID, title, and logo filename\", function () {",
+							"    const brands = pm.response.json().data;",
+							"    brands.forEach(function (brand) {",
+							"        pm.expect(brand.id).to.exist;",
+							"        pm.expect(brand.title).to.exist;",
+							"        pm.expect(brand.logoFilename).to.exist;",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/cars/brands"
+			},
+			"response": []
+		},
+		{
+			"name": "CarsModels",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Take the response body as a valid JSON",
+							"let response = pm.response.json();",
+							"",
+							"// Known carBrandId ",
+							"let carBrandId = parseInt(pm.environment.get(\"randomCarBrandId\"), 10);",
+							"",
+							"// Check if the status is 'ok' and 'data' array is present",
+							"if (response.status === 'ok' && Array.isArray(response.data) && response.data.length > 0) {",
+							"    // Extract the 'data' array",
+							"    let dataArray = response.data;",
+							"",
+							"    // Filter the car models by 'carBrandId'",
+							"    let carModels = dataArray.filter(item => item.carBrandId === carBrandId);",
+							"",
+							"    // If car models found, select a random one",
+							"    if (carModels.length > 0) {",
+							"        // Select a random model",
+							"        let randomModel = carModels[Math.floor(Math.random() * carModels.length)];",
+							"",
+							"        // Save the random model ID to an environment variable",
+							"        pm.environment.set(\"randomCarModelId\", randomModel.id);",
+							"",
+							"        // Log the random car model to the console for debugging",
+							"        console.log(\"Random Car Model for carBrandId\", carBrandId, randomModel);",
+							"    } else {",
+							"        console.log(\"No car models found for carBrandId\", carBrandId);",
+							"    }",
+							"} else {",
+							"    console.error(\"Invalid response structure or empty data array\");",
+							"}",
+							"pm.test(\"Status is ok\", function () {",
+							"    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+							"});",
+							"pm.test(\"Data is present and is an array\", function () {",
+							"    const data = pm.response.json().data;",
+							"    pm.expect(data).to.be.an(\"array\");",
+							"    pm.expect(data.length).to.be.above(0); // Check if data array is not empty",
+							"});",
+							"pm.test(\"Each model contains ID, carBrandId, and title\", function () {",
+							"    const models = pm.response.json().data;",
+							"    models.forEach(function (model) {",
+							"        pm.expect(model.id).to.exist;",
+							"        pm.expect(model.carBrandId).to.exist;",
+							"        pm.expect(model.title).to.exist;",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"Model IDs are unique\", function () {",
+							"    const modelIds = pm.response.json().data.map(model => model.id);",
+							"    const uniqueModelIds = [...new Set(modelIds)]; // Convert to set to remove duplicates",
+							"    pm.expect(modelIds.length).to.equal(uniqueModelIds.length);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/cars/models"
+			},
+			"response": []
+		},
+		{
+			"name": "CreateNewCars",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"/*// Set random Mileage",
+							"let randomMileage = pm.variables.replaceIn(\"{{$randomInt}}\");",
+							"console.log(\"randomMileage\", randomMileage);",
+							"*/"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Take the response body as a valid JSON",
+							"let response = pm.response.json();",
+							"",
+							"// Check if the status is 'ok' and 'data' object is present",
+							"if (response.status === 'ok' && response.data) {",
+							"    // Extract the required fields from the 'data' object",
+							"    let carId = response.data.id;",
+							"    let updatedMileageAt = response.data.updatedMileageAt;",
+							"    let mileage = response.data.mileage;",
+							"    let initialMileage = response.data.initialMileage;",
+							"",
+							"    // Check if initialMileage is greater than or equal to mileage",
+							"    if (initialMileage >= mileage) {",
+							"        mileage += 100;",
+							"    }",
+							"",
+							"    // Save the extracted values to environment variables",
+							"    pm.environment.set(\"carId\", carId);",
+							"    pm.environment.set(\"updatedMileageAt\", updatedMileageAt);",
+							"    pm.environment.set(\"mileage\", mileage);",
+							"",
+							"    // Log the extracted values to the console for debugging",
+							"    console.log(\"Car ID:\", carId);",
+							"    console.log(\"Updated Mileage At:\", updatedMileageAt);",
+							"    console.log(\"Mileage:\", mileage);",
+							"} else {",
+							"    console.error(\"Invalid response structure or missing data\");",
+							"}",
+							"",
+							"pm.test(\"Response status is ok\", function () {",
+							"    pm.response.to.have.status(\"Created\");",
+							"});",
+							"pm.test(\"Response contains necessary data fields\", function () {",
+							"    const data = pm.response.json().data;",
+							"    pm.expect(data).to.have.property(\"id\");",
+							"    pm.expect(data).to.have.property(\"carBrandId\");",
+							"    pm.expect(data).to.have.property(\"carModelId\");",
+							"    pm.expect(data).to.have.property(\"initialMileage\");",
+							"    pm.expect(data).to.have.property(\"updatedMileageAt\");",
+							"    pm.expect(data).to.have.property(\"carCreatedAt\");",
+							"    pm.expect(data).to.have.property(\"mileage\");",
+							"    pm.expect(data).to.have.property(\"brand\");",
+							"    pm.expect(data).to.have.property(\"model\");",
+							"    pm.expect(data).to.have.property(\"logo\");",
+							"});",
+							"",
+							"pm.test(\"Initial and updated mileage are consistent\", function () {",
+							"    const data = pm.response.json().data;",
+							"    pm.expect(data.initialMileage).to.equal(data.mileage);",
+							"});",
+							"pm.test(\"Car creation and update dates are consistent\", function () {",
+							"    const data = pm.response.json().data;",
+							"    pm.expect(data.carCreatedAt).to.equal(data.updatedMileageAt);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"carBrandId\": \"{{randomCarBrandId}}\",\n\"carModelId\": \"{{randomCarModelId}}\",\n\"mileage\": 111\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/cars"
+			},
+			"response": []
+		},
+		{
+			"name": "CreateAnExpenses",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Initialize or increment the mileage",
+							"let mileage = pm.environment.get(\"mileage\");",
+							"if (!mileage) {",
+							"mileage = 122; // initial mileage value",
+							"} else {",
+							"mileage = parseInt(mileage) + 10; // increment by 10 each time",
+							"}",
+							"pm.environment.set(\"mileage\", mileage);",
+							"",
+							"// Initialize or increment the liters",
+							"let liters = pm.environment.get(\"liters\");",
+							"if (!liters) {",
+							"liters = 11; // initial liters value",
+							"} else {",
+							"liters = parseInt(liters) + 1; // increment by 1 each time",
+							"}",
+							"pm.environment.set(\"liters\", liters);",
+							"",
+							"// Initialize or increment the totalCost",
+							"let totalCost = pm.environment.get(\"totalCost\");",
+							"if (!totalCost) {",
+							"totalCost = 11; // initial total cost value",
+							"} else {",
+							"totalCost = parseInt(totalCost) + 1; // increment by 1 each time",
+							"}",
+							"pm.environment.set(\"totalCost\", totalCost);",
+							"",
+							"// Ensure carId and updatedMileageAt are set",
+							"let carId = pm.environment.get(\"carId\");",
+							"if (!carId) {",
+							"throw new Error(\"carId is not set\");",
+							"}",
+							"",
+							"let updatedMileageAt = pm.environment.get(\"updatedMileageAt\");",
+							"if (!updatedMileageAt) {",
+							"updatedMileageAt = new Date().toISOString();",
+							"}",
+							"pm.environment.set(\"updatedMileageAt\", updatedMileageAt);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"",
+							"// Check if the status is \"ok\"",
+							"pm.test(\"Check if response status is ok\", function () {",
+							"    pm.expect(response.status).to.equal(\"ok\");",
+							"});",
+							"",
+							"// For example, updating the reportedAt field for the next request",
+							"pm.environment.set(\"updatedMileageAt\", new Date().toISOString());"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"carId\": {{carId}},\n  \"reportedAt\": \"{{updatedMileageAt}}\",\n  \"mileage\": {{mileage}},\n  \"liters\": {{liters}},\n  \"totalCost\": {{totalCost}},\n  \"forceMileage\": false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/expenses"
+			},
+			"response": []
+		},
+		{
+			"name": "ChangeUsersPassword",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set current password and new password",
+							"const currentPassword = pm.environment.get(\"randomPassword\") || \"initialPassword123\"; // default value if not set",
+							"const newPassword = \"Qwerty12345\"; // new password you want to set",
+							"",
+							"// Clear and unset previous environment variables",
+							"var envVariables = [\"randomemail\", \"randomFirstName\", \"randomLastName\", \"randomPassword\", \"repeatPassword\", \"oldPassword\"];",
+							"/*",
+							"envVariables.forEach(variable => {",
+							"    pm.environment.unset(variable);",
+							"});*/",
+							"",
+							"",
+							"// Set new environment variables",
+							"pm.environment.set(\"randomPassword\", newPassword);",
+							"pm.environment.set(\"repeatPassword\", newPassword);",
+							"pm.environment.set(\"oldPassword\", currentPassword);",
+							"",
+							"// Log the values to the console for verification",
+							"console.log(\"Old Password: \" + pm.environment.get(\"oldPassword\"));",
+							"console.log(\"New Password: \" + pm.environment.get(\"randomPassword\"));",
+							"console.log(\"Repeat Password: \" + pm.environment.get(\"repeatPassword\"));",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Response status is ok\", function () {",
+							"    pm.expect(pm.response.json().status).to.equal(\"ok\");",
+							"});",
+							"pm.test(\"User ID is present and non-empty\", function () {",
+							"    const userId = pm.response.json().data.userId;",
+							"    pm.expect(userId).to.be.a(\"number\");",
+							"});",
+							"pm.test(\"User ID matches expected value\", function () {",
+							"    // Get the expected user ID from the environment",
+							"    const expectedUserId = pm.environment.get(\"userId\");",
+							"    ",
+							"    // Extract the user ID from the response",
+							"    const userId = pm.response.json().data.userId;",
+							"    ",
+							"    // Check if the extracted user ID matches the expected value",
+							"    pm.expect(userId).to.equal(expectedUserId);",
+							"});",
+							"pm.test(\"Response Body contains expected keys\", function () {",
+							"    pm.expect(pm.response.json()).to.have.keys(\"status\", \"data\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"oldPassword\": \"{{oldPassword}}\",\n\"password\": \"{{randomPassword}}\",\n\"repeatPassword\": \"{{repeatPassword}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/users/password"
+			},
+			"response": []
+		},
+		{
+			"name": "ResetPassword",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.get(\"loginEmail\");",
+							"",
+							"console.log(\"Login Email: \" + pm.environment.get(\"loginEmail\"));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Reset password status is 'ok'\", function () {",
+							"    const status = pm.response.json().status;",
+							"    pm.expect(status).to.equal(\"ok\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"email\": \"{{loginEmail}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/auth/resetPassword"
+			},
+			"response": []
+		},
+		{
+			"name": "LogOut",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User log out status is 'ok'\", function () {",
+							"    const status = pm.response.json().status;",
+							"    pm.expect(status).to.equal(\"ok\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/auth/logout"
+			},
+			"response": []
+		},
+		{
+			"name": "SignInUsers Copy",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Set new environment variables for login",
+							"pm.environment.set(\"loginEmail\", pm.environment.get(\"randomemail\"));",
+							"pm.environment.set(\"loginPassword\", pm.environment.get(\"randomPassword\"));",
+							"pm.environment.set(\"rememberMe\", true);",
+							"",
+							"// Log the values to the console for verification",
+							"console.log(\"Login Email: \" + pm.environment.get(\"loginEmail\"));",
+							"console.log(\"Login Password: \" + pm.environment.get(\"loginPassword\"));",
+							"console.log(\"Remember Me: \" + pm.environment.get(\"rememberMe\"));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Response Body contains expected keys\", function () {",
+							"    pm.expect(pm.response.json()).to.have.keys('status', 'data');",
+							"});",
+							"pm.test(\"User ID is present\", function () {",
+							"    const userId = pm.response.json().data.userId;",
+							"    pm.expect(userId).to.exist; // Check if user ID exists",
+							"    pm.expect(userId).to.not.be.null; // Check if user ID is not null",
+							"    pm.expect(userId).to.not.be.undefined; // Check if user ID is not undefined",
+							"});",
+							"pm.test(\"Photo Filename is present and non-empty\", function () {",
+							"    pm.expect(pm.response.json().data.photoFilename).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test(\"Currency is present and non-empty\", function () {",
+							"    pm.expect(pm.response.json().data.currency).to.be.a('string').and.not.empty;",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"{{loginEmail}}\",\n    \"password\": \"{{loginPassword}}\",\n    \"remember\": {{rememberMe}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{url}}/auth/signin"
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteUsersAccount",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Unset previous environment variables",
+							"pm.environment.unset(\"randomemail\");",
+							"pm.environment.unset(\"randomFirstName\");",
+							"pm.environment.unset(\"randomLastName\");",
+							"pm.environment.unset(\"randomPassword\");",
+							"pm.environment.unset(\"repeatPassword\");",
+							"// Log the values to the console for verification",
+							"console.log(\"Email: \" + pm.environment.get(\"randomemail\"));",
+							"console.log(\"First Name: \" + pm.environment.get(\"randomFirstName\"));",
+							"console.log(\"Last Name: \" + pm.environment.get(\"randomLastName\"));",
+							"console.log(\"Password: \" + pm.environment.get(\"randomPassword\"));",
+							"console.log(\"Repeat Password: \" + pm.environment.get(\"repeatPassword\"));",
+							"pm.test(\"Delete user account status is 'ok'\", function () {",
+							"    const status = pm.response.json().status;",
+							"    pm.expect(status).to.equal(\"ok\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "accept",
+						"value": "application/json"
+					}
+				],
+				"url": "{{url}}/users"
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": {
+			"password": "postman",
+			"username": "postman"
+		}
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "user",
+			"value": "postman",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "postman",
+			"type": "string"
+		}
+	]
+}
